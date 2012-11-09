@@ -15,9 +15,7 @@ namespace AWCLP
     class AWCLP
     {
         static Regex RgxSession =
-            new Regex(@"^\* ActiveWorlds chat session: (.+?) \*$", RegexOptions.IgnoreCase);
-
-        const string TERMINATOR = "*****************************************************";
+            new Regex(@"\* ActiveWorlds chat session: (.+?) \*", RegexOptions.IgnoreCase);
 
         static string myPath;
         static StreamReader file;
@@ -55,14 +53,23 @@ namespace AWCLP
                     else line = line.Trim();
 
                     // Discard empty and immediate duplicate lines
-                    if (line == prevLine) continue;
-                    else if (line == "") continue;
+                    if (line == prevLine)
+                    {
+                        WARN("Discarding duplicate line");
+                        continue;
+                    }
+                    else if (line == "")
+                    {
+                        WARN("Discarding empty line");
+                        continue;
+                    }
 
                     // New section hit
-                    if (line == TERMINATOR)
+                    if (line.StartsWith("***"))
                     {
                         // If returns false, we've hit the end of the file prematurely
                         if (!ProcessSection()) goto end;
+                        else continue;
                     }
 
                     // Write to current section
@@ -104,7 +111,6 @@ namespace AWCLP
 
             // Get date
             var date = sectionDate.Groups[1].Value.Replace(':', '.');
-            Console.WriteLine("\tProcessing new log for {0}", date);
             NewSection(date);
 
             // Skip next terminator
@@ -115,6 +121,7 @@ namespace AWCLP
         static void NewSection(string name)
         {
             CloseSection();
+            Console.WriteLine("\tProcessing new log for {0}", name);
             currentSection = File.CreateText(Path.Combine(myPath, name + ".txt"));
         }
 
